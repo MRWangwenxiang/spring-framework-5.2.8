@@ -25,26 +25,24 @@ import org.xml.sax.InputSource;
  * Strategy interface for loading an XML {@link Document}.
  *
  * @author Rob Harrop
- * @since 2.0
  * @see DefaultDocumentLoader
+ * @since 2.0
  */
 public interface DocumentLoader {
 
 	/**
-	 * Load a {@link Document document} from the supplied {@link InputSource source}.
-	 * @param inputSource the source of the document that is to be loaded
-	 * @param entityResolver the resolver that is to be used to resolve any entities
-	 * @param errorHandler used to report any errors during document loading
-	 * @param validationMode the type of validation
-	 * {@link org.springframework.util.xml.XmlValidationModeDetector#VALIDATION_DTD DTD}
-	 * or {@link org.springframework.util.xml.XmlValidationModeDetector#VALIDATION_XSD XSD})
-	 * @param namespaceAware {@code true} if support for XML namespaces is to be provided
-	 * @return the loaded {@link Document document}
-	 * @throws Exception if an error occurs
+	 * 将提供的{@link InputSource inputSource}加载为{@link Document document}
+	 *
+	 * @param inputSource    要加载的文档的源
+	 * @param entityResolver 用于解析实体的解析器
+	 * @param errorHandler   文档加载过程中的任何错误的钩子处理类
+	 * @param validationMode 验证的类型{@link org.springframework.util.xml.XmlValidationModeDetector#VALIDATION_DTD DTD}或{@link org.springframework.util.xml.XmlValidationModeDetector#VALIDATION_XSD XSD})
+	 * @param namespaceAware 如果要提供对XML名称空间的支持，则为{@code true}
+	 * @return 加载完成的{@link Document document}
+	 * @throws Exception 加载过程中发生的错误
 	 */
 	Document loadDocument(
 			InputSource inputSource, EntityResolver entityResolver,
 			ErrorHandler errorHandler, int validationMode, boolean namespaceAware)
 			throws Exception;
-
 }

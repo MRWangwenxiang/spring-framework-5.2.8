@@ -622,6 +622,7 @@ public abstract class ObjectUtils {
 	 * @return the object's identity code in hex notation
 	 */
 	public static String getIdentityHexString(Object obj) {
+		//TODO System.identityHashCode与 Integer.toHexString的API
 		return Integer.toHexString(System.identityHashCode(obj));
 	}
 
