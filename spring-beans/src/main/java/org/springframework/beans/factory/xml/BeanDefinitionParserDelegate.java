@@ -1305,11 +1305,13 @@ public class BeanDefinitionParserDelegate {
 		if (namespaceUri == null) {
 			return null;
 		}
+		// 2.获取标签对应的handler处理类
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
+		// 策略模式，通过配置文件找到不同的处理类来处理不同的标签
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 
