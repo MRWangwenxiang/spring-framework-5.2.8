@@ -21,8 +21,12 @@ import org.springframework.context.annotation.AnnotationConfigBeanDefinitionPars
 import org.springframework.context.annotation.ComponentScanBeanDefinitionParser;
 
 /**
- * {@link org.springframework.beans.factory.xml.NamespaceHandler}
- * for the '{@code context}' namespace.
+ * {@code context}'命名空间的的handler处理类{@link org.springframework.beans.factory.xml.NamespaceHandler}
+ * <p>
+ * <pre>
+ * {@code
+ *  <context:component-scan base-package="org.springframework.context.annotation" use-default-filters="false">
+ * }
  *
  * @author Mark Fisher
  * @author Juergen Hoeller
