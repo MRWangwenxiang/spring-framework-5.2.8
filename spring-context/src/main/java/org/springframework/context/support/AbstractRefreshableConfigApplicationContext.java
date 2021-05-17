@@ -24,11 +24,14 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * {@link AbstractRefreshableApplicationContext} subclass that adds common handling
- * of specified config locations. Serves as base class for XML-based application
- * context implementations such as {@link ClassPathXmlApplicationContext} and
- * {@link FileSystemXmlApplicationContext}, as well as
- * {@link org.springframework.web.context.support.XmlWebApplicationContext}.
+ * {@link AbstractRefreshableApplicationContext}的子类
+ * <p>
+ * 扩展添加对指定配置位置的通用处理
+ * <p>
+ * 作为基于XML的应用程序上下文实现
+ * <p>
+ * 例如:{@link ClassPathXmlApplicationContext},{@link FileSystemXmlApplicationContext},
+ * {@link org.springframework.web.context.support.XmlWebApplicationContext}
  *
  * @author Juergen Hoeller
  * @see #setConfigLocation
@@ -39,6 +42,9 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractRefreshableConfigApplicationContext extends AbstractRefreshableApplicationContext
 		implements BeanNameAware, InitializingBean {
 
+	/**
+	 * 应用程序上下文的配置文件位置
+	 */
 	@Nullable
 	private String[] configLocations;
 
@@ -62,18 +68,26 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 
 
 	/**
-	 * Set the config locations for this application context in init-param style,
-	 * i.e. with distinct locations separated by commas, semicolons or whitespace.
-	 * <p>If not set, the implementation may use a default as appropriate.
+	 * 如果初始化参数模式(应用传入配置文件路径位置)
+	 * <p>
+	 * 如果路径以号，分号或空格分隔，则将其解析为路径数组
+	 * <p>
+	 * 实际调用{@link AbstractRefreshableConfigApplicationContext#setConfigLocations(String... locations) "setConfigLoacation(String ...)"}
+	 *
+	 * @param location
 	 */
 	public void setConfigLocation(String location) {
 		setConfigLocations(StringUtils.tokenizeToStringArray(location, CONFIG_LOCATION_DELIMITERS));
 	}
 
 	/**
-	 * Set the config locations for this application context.
-	 * <p>If not set, the implementation may use a default as appropriate.
+	 * 设置应用上下文中的配置文件位置
+	 * <p>
+	 * 如果设置为null，则再{@link AbstractRefreshableConfigApplicationContext#getConfigLocations() "getConfigLocations"}中返回默认值
+	 *
+	 * @param locations
 	 */
+	// TODO 传入配置的路径根据环境变量解析为实际路径
 	public void setConfigLocations(@Nullable String... locations) {
 		if (locations != null) {
 			Assert.noNullElements(locations, "Config locations must not be null");
