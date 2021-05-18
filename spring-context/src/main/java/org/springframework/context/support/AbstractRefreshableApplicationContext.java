@@ -26,30 +26,25 @@ import org.springframework.lang.Nullable;
 import java.io.IOException;
 
 /**
- * Base class for {@link org.springframework.context.ApplicationContext}
- * implementations which are supposed to support multiple calls to {@link #refresh()},
- * creating a new internal bean factory instance every time.
- * Typically (but not necessarily), such a context will be driven by
- * a set of config locations to load bean definitions from.
- *
- * <p>The only method to be implemented by subclasses is {@link #loadBeanDefinitions},
- * which gets invoked on each refresh. A concrete implementation is supposed to load
- * bean definitions into the given
- * {@link org.springframework.beans.factory.support.DefaultListableBeanFactory},
- * typically delegating to one or more specific bean definition readers.
- *
- * <p><b>Note that there is a similar base class for WebApplicationContexts.</b>
- * {@link org.springframework.web.context.support.AbstractRefreshableWebApplicationContext}
- * provides the same subclassing strategy, but additionally pre-implements
- * all context functionality for web environments. There is also a
- * pre-defined way to receive config locations for a web context.
- *
- * <p>Concrete standalone subclasses of this base class, reading in a
- * specific bean definition format, are {@link ClassPathXmlApplicationContext}
- * and {@link FileSystemXmlApplicationContext}, which both derive from the
- * common {@link AbstractXmlApplicationContext} base class;
- * {@link org.springframework.context.annotation.AnnotationConfigApplicationContext}
- * supports {@code @Configuration}-annotated classes as a source of bean definitions.
+ * {@link org.springframework.context.ApplicationContext}的一个实现基类。
+ * <p>
+ * 该类支持对{@link #refresh()}多次调用， 每次调用都将创建一个新的内部beanFactory实例，典型的模板模式。
+ * <p>
+ * 子类唯一需要实现的方法是{@link #loadBeanDefinitions}，每次调用{@link #refresh()}刷新时都会调用该方法。
+ * <p>
+ * {@link #loadBeanDefinitions}其具体的实现逻辑应该是将beanDefinitions加载到给定的{@link org.springframework.beans.factory.support.DefaultListableBeanFactory}中，通常委托给一个或多个特定的beanDefinition读取器，典型的委派模式。
+ * <p>
+ * 注意，WebApplicationContexts有一个类似的基类。
+ * {@link org.springframework.web.context.support.AbstractRefreshableWebApplicationContext}提供了相同的子类化策略，
+ * 但是还预实现了Web环境的所有上下文功能。
+ * 还有一种预定义的方式来接收Web上下文的配置位置。
+ * <p>
+ * 读取beanDefinition的两种方式一种是xml方式，该方式提供了通用的{@link AbstractXmlApplicationContext}基类，从基类根据不同读取方式派生出
+ * {@link ClassPathXmlApplicationContext}和{@link FileSystemXmlApplicationContext}。
+ * <p>
+ * 另一种
+ * {@link org.springframework.context.annotation.AnnotationConfigApplicationContext}支持{@code @Configuration}注解的类作为beanDefinition的源
+ * <p>
  *
  * @author Juergen Hoeller
  * @author Chris Beams
@@ -71,8 +66,9 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	private Boolean allowCircularReferences;
 
 	/**
-	 * Bean factory for this context.
+	 * 该上下文的beanFactory
 	 */
+	// TODO 为什么要用volatile来修饰
 	@Nullable
 	private volatile DefaultListableBeanFactory beanFactory;
 
@@ -93,13 +89,6 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	}
 
 
-	/**
-	 * Set whether it should be allowed to override bean definitions by registering
-	 * a different definition with the same name, automatically replacing the former.
-	 * If not, an exception will be thrown. Default is "true".
-	 *
-	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowBeanDefinitionOverriding
-	 */
 	/**
 	 * 设置是否允许覆盖beanDefinition，默认值为{@code true}
 	 * <p>
@@ -135,9 +124,13 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 
 
 	/**
-	 * This implementation performs an actual refresh of this context's underlying
-	 * bean factory, shutting down the previous bean factory (if any) and
-	 * initializing a fresh bean factory for the next phase of the context's lifecycle.
+	 * 该类最重要的方法
+	 * <p>
+	 * 实现对该上下文的beanFactory进行刷新
+	 * <p>
+	 * 如果已经有一个beanFactory则关闭，为该上下文初始化一个新的beanFactory
+	 *
+	 * @throws BeansException
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
@@ -254,13 +247,15 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		}
 	}
 
+
 	/**
-	 * Load bean definitions into the given bean factory, typically through
-	 * delegating to one or more bean definition readers.
+	 * 通常通过委派一个或多个bean定义读取器，将beanDefinitions加载到给定的beanFactory中
+	 * <p>
+	 * 会有多种实现:例如xml和annotation
 	 *
-	 * @param beanFactory the bean factory to load bean definitions into
-	 * @throws BeansException if parsing of the bean definitions failed
-	 * @throws IOException    if loading of bean definition files failed
+	 * @param beanFactory 将beanDefinitions加载到的beanFactory
+	 * @throws BeansException 如果解析bean定义失败
+	 * @throws IOException    如果加载bean定义文件失败
 	 * @see org.springframework.beans.factory.support.PropertiesBeanDefinitionReader
 	 * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
 	 */
