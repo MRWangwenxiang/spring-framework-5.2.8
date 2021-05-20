@@ -16,37 +16,19 @@
 
 package org.springframework.core.convert.support;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 import org.springframework.core.DecoratingProxy;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.convert.ConversionException;
-import org.springframework.core.convert.ConversionFailedException;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.ConverterNotFoundException;
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.core.convert.converter.ConditionalConverter;
-import org.springframework.core.convert.converter.ConditionalGenericConverter;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.core.convert.converter.ConverterFactory;
-import org.springframework.core.convert.converter.ConverterRegistry;
-import org.springframework.core.convert.converter.GenericConverter;
+import org.springframework.core.convert.*;
+import org.springframework.core.convert.converter.*;
 import org.springframework.core.convert.converter.GenericConverter.ConvertiblePair;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Base {@link ConversionService} implementation suitable for use in most environments.
@@ -71,6 +53,10 @@ public class GenericConversionService implements ConfigurableConversionService {
 	 * Used as a cache entry when no converter is available.
 	 * This converter is never returned.
 	 */
+	/**
+	 * 没有可用转换器时，返回的默认值
+	 */
+	// TODO 为什么不直接使用null，value值为null时对Map有什么影响?
 	private static final GenericConverter NO_MATCH = new NoOpConverter("NO_MATCH");
 
 
@@ -150,8 +136,9 @@ public class GenericConversionService implements ConfigurableConversionService {
 	 * Return whether conversion between the source type and the target type can be bypassed.
 	 * <p>More precisely, this method will return true if objects of sourceType can be
 	 * converted to the target type by returning the source object unchanged.
+	 *
 	 * @param sourceType context about the source type to convert from
-	 * (may be {@code null} if source is {@code null})
+	 *                   (may be {@code null} if source is {@code null})
 	 * @param targetType context about the target type to convert to (required)
 	 * @return {@code true} if conversion can be bypassed; {@code false} otherwise
 	 * @throws IllegalArgumentException if targetType is {@code null}
@@ -179,10 +166,13 @@ public class GenericConversionService implements ConfigurableConversionService {
 	public Object convert(@Nullable Object source, @Nullable TypeDescriptor sourceType, TypeDescriptor targetType) {
 		Assert.notNull(targetType, "Target type to convert to cannot be null");
 		if (sourceType == null) {
+			// 如果SourceType为空，则Source必须为空，否则抛出异常
 			Assert.isTrue(source == null, "Source must be [null] if source type == [null]");
+			// 处理原数据为null的转换，目标类型为Optional则转换为Optional.empty,其它目标类型转换为null
 			return handleResult(null, targetType, convertNullSource(null, targetType));
 		}
 		if (source != null && !sourceType.getObjectType().isInstance(source)) {
+			// source数据源的Class类型不是sourceType类型
 			throw new IllegalArgumentException("Source to convert from must be an instance of [" +
 					sourceType + "]; instead it was a [" + source.getClass().getName() + "]");
 		}
@@ -200,12 +190,13 @@ public class GenericConversionService implements ConfigurableConversionService {
 	 * Simply delegates to {@link #convert(Object, TypeDescriptor, TypeDescriptor)} and
 	 * encapsulates the construction of the source type descriptor using
 	 * {@link TypeDescriptor#forObject(Object)}.
-	 * @param source the source object
+	 *
+	 * @param source     the source object
 	 * @param targetType the target type
 	 * @return the converted value
-	 * @throws ConversionException if a conversion exception occurred
+	 * @throws ConversionException      if a conversion exception occurred
 	 * @throws IllegalArgumentException if targetType is {@code null},
-	 * or sourceType is {@code null} but source is not {@code null}
+	 *                                  or sourceType is {@code null} but source is not {@code null}
 	 */
 	@Nullable
 	public Object convert(@Nullable Object source, TypeDescriptor targetType) {
@@ -221,14 +212,15 @@ public class GenericConversionService implements ConfigurableConversionService {
 	// Protected template methods
 
 	/**
-	 * Template method to convert a {@code null} source.
-	 * <p>The default implementation returns {@code null} or the Java 8
-	 * {@link java.util.Optional#empty()} instance if the target type is
-	 * {@code java.util.Optional}. Subclasses may override this to return
-	 * custom {@code null} objects for specific target types.
-	 * @param sourceType the source type to convert from
-	 * @param targetType the target type to convert to
-	 * @return the converted null object
+	 * 如果源数据为{@code null}，转换的模板方法
+	 * <p>
+	 * 如果目标类型为{@code java.util.Optional},则转换为{@link java.util.Optional#empty()}
+	 * <p>
+	 * 否则，转换为{@code null}
+	 *
+	 * @param sourceType 原数据类型
+	 * @param targetType 转换后的类型
+	 * @return
 	 */
 	@Nullable
 	protected Object convertNullSource(@Nullable TypeDescriptor sourceType, TypeDescriptor targetType) {
@@ -243,6 +235,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 	 * First queries this ConversionService's converter cache.
 	 * On a cache miss, then performs an exhaustive search for a matching converter.
 	 * If no converter matches, returns the default converter.
+	 *
 	 * @param sourceType the source type to convert from
 	 * @param targetType the target type to convert to
 	 * @return the generic converter that will perform the conversion,
@@ -252,11 +245,13 @@ public class GenericConversionService implements ConfigurableConversionService {
 	@Nullable
 	protected GenericConverter getConverter(TypeDescriptor sourceType, TypeDescriptor targetType) {
 		ConverterCacheKey key = new ConverterCacheKey(sourceType, targetType);
+		// 缓存操作
 		GenericConverter converter = this.converterCache.get(key);
 		if (converter != null) {
 			return (converter != NO_MATCH ? converter : null);
 		}
 
+		// 缓存中没值
 		converter = this.converters.find(sourceType, targetType);
 		if (converter == null) {
 			converter = getDefaultConverter(sourceType, targetType);
@@ -275,6 +270,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 	 * Return the default converter if no converter is found for the given sourceType/targetType pair.
 	 * <p>Returns a NO_OP Converter if the source type is assignable to the target type.
 	 * Returns {@code null} otherwise, indicating no suitable converter could be found.
+	 *
 	 * @param sourceType the source type to convert from
 	 * @param targetType the target type to convert to
 	 * @return the default generic converter that will perform the conversion
@@ -324,11 +320,21 @@ public class GenericConversionService implements ConfigurableConversionService {
 	@Nullable
 	private Object handleResult(@Nullable TypeDescriptor sourceType, TypeDescriptor targetType, @Nullable Object result) {
 		if (result == null) {
+			// 断言target不是原始类型
+			// 因为原始类型是有默认值的
 			assertNotPrimitiveTargetType(sourceType, targetType);
 		}
 		return result;
 	}
 
+	/**
+	 * 断言target不是原始类型
+	 * <p>
+	 * 如果为原始类型则抛出异常
+	 *
+	 * @param sourceType
+	 * @param targetType
+	 */
 	private void assertNotPrimitiveTargetType(@Nullable TypeDescriptor sourceType, TypeDescriptor targetType) {
 		if (targetType.isPrimitive()) {
 			throw new ConversionFailedException(sourceType, targetType, null,
@@ -444,8 +450,9 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 
 	/**
-	 * Key for use with the converter cache.
+	 * 转换缓存的key对象
 	 */
+	// REMARK 将对象作为缓存key
 	private static final class ConverterCacheKey implements Comparable<ConverterCacheKey> {
 
 		private final TypeDescriptor sourceType;
@@ -457,19 +464,36 @@ public class GenericConversionService implements ConfigurableConversionService {
 			this.targetType = targetType;
 		}
 
+		/**
+		 * 如果hashCode相同则会使用equals比较是否相同
+		 *
+		 * @param other
+		 * @return
+		 */
 		@Override
 		public boolean equals(@Nullable Object other) {
+			// 同一个对象
 			if (this == other) {
 				return true;
 			}
+			// 不同类型的对象
 			if (!(other instanceof ConverterCacheKey)) {
 				return false;
 			}
 			ConverterCacheKey otherKey = (ConverterCacheKey) other;
+
+			// 里面两对象同时相等
 			return (this.sourceType.equals(otherKey.sourceType)) &&
 					this.targetType.equals(otherKey.targetType);
 		}
 
+		/**
+		 * 缓存key对象比较会比较hashCode方法，所以需要重写
+		 * <p>
+		 * 为什么用29来作为基数：29为质数，质数作为基数后得到的值唯一性比较高
+		 *
+		 * @return
+		 */
 		@Override
 		public int hashCode() {
 			return (this.sourceType.hashCode() * 29 + this.targetType.hashCode());
@@ -509,8 +533,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 				Assert.state(converter instanceof ConditionalConverter,
 						"Only conditional converters may return null convertible types");
 				this.globalConverters.add(converter);
-			}
-			else {
+			} else {
 				for (ConvertiblePair convertiblePair : convertibleTypes) {
 					ConvertersForPair convertersForPair = getMatchableConverters(convertiblePair);
 					convertersForPair.add(converter);
@@ -530,6 +553,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 		 * Find a {@link GenericConverter} given a source and target type.
 		 * <p>This method will attempt to match all possible converters by working
 		 * through the class and interface hierarchy of the types.
+		 *
 		 * @param sourceType the source type
 		 * @param targetType the target type
 		 * @return a matching {@link GenericConverter}, or {@code null} if none found
@@ -553,7 +577,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 		@Nullable
 		private GenericConverter getRegisteredConverter(TypeDescriptor sourceType,
-				TypeDescriptor targetType, ConvertiblePair convertiblePair) {
+														TypeDescriptor targetType, ConvertiblePair convertiblePair) {
 
 			// Check specifically registered converters
 			ConvertersForPair convertersForPair = this.converters.get(convertiblePair);
@@ -574,6 +598,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 		/**
 		 * Returns an ordered class hierarchy for the given type.
+		 *
 		 * @param type the type
 		 * @return an ordered list of all classes that the given type extends or implements
 		 */
@@ -607,7 +632,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 		}
 
 		private void addInterfacesToClassHierarchy(Class<?> type, boolean asArray,
-				List<Class<?>> hierarchy, Set<Class<?>> visited) {
+												   List<Class<?>> hierarchy, Set<Class<?>> visited) {
 
 			for (Class<?> implementedInterface : type.getInterfaces()) {
 				addToClassHierarchy(hierarchy.size(), implementedInterface, asArray, hierarchy, visited);
@@ -615,7 +640,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 		}
 
 		private void addToClassHierarchy(int index, Class<?> type, boolean asArray,
-				List<Class<?>> hierarchy, Set<Class<?>> visited) {
+										 List<Class<?>> hierarchy, Set<Class<?>> visited) {
 
 			if (asArray) {
 				type = Array.newInstance(type, 0).getClass();
@@ -676,7 +701,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 
 	/**
-	 * Internal converter that performs no operation.
+	 * 不执行任何操作的转换器
 	 */
 	private static class NoOpConverter implements GenericConverter {
 
