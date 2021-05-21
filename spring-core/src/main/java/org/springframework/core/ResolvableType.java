@@ -735,6 +735,8 @@ public class ResolvableType implements Serializable {
 					generics[i] = ResolvableType.forType(typeParams[i], this);
 				}
 			} else if (this.type instanceof ParameterizedType) {
+				// 获取泛型<>内的实际类型
+				// Map<K,V> -> K和V
 				Type[] actualTypeArguments = ((ParameterizedType) this.type).getActualTypeArguments();
 				generics = new ResolvableType[actualTypeArguments.length];
 				for (int i = 0; i < actualTypeArguments.length; i++) {
